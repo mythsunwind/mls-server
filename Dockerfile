@@ -9,6 +9,7 @@ RUN apk add --no-cache \
         musl-dev \
         g++ \
         ghc \
+        git \
         tar \
         curl \
         openssl-dev \
@@ -30,9 +31,13 @@ FROM alpine:3.8 as deps
 ARG executable
 COPY --from=builder /src/mls-server/dist/${executable} /usr/bin/${executable}
 
+RUN mkdir -p /src/mls-server/conf/
+COPY --from=builder /src/mls-server/conf/mls-server.yaml /src/mls-server/conf/
+
 RUN apk add --no-cache \
         openssl \
         gmp \
+        bash \
         libgcc \
         libffi \
         libstdc++ \
@@ -42,4 +47,5 @@ RUN apk add --no-cache \
 # ARGs are not available at runtime, create symlink at build time
 # more info: https://stackoverflow.com/questions/40902445/using-variable-interpolation-in-string-in-docker
 RUN ln -s /usr/bin/${executable} /usr/bin/service
-ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/bin/service"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["bash", "-c", "cd /src/mls-server/ && /usr/bin/service"]
